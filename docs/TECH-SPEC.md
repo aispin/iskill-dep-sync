@@ -1,6 +1,6 @@
 # TECH SPEC · iskill 体系「共享代码唯一真源 + 依赖同步 + 技能自安装」
 
-> 本文档是 iskill-dep-sync 的设计规格与背景记录。落地方案由用户于 2026-10-09 拍板。
+> 本文档是 iskill-utils 的设计规格与背景记录。落地方案由用户于 2026-10-09 拍板。
 
 ## 1. 背景与问题
 
@@ -110,8 +110,8 @@ iskill 体系（`~/WorkBuddy/ISkills/` 下 29 个 `iskill-*` 技能，27 个独�
 
 ## 4. 落地清单（2026-10-09 执行记录）
 
-- 新仓库 `iskill-dep-sync`：SKILL.md / README.md / docs/TECH-SPEC.md / package.json /
-  scripts/skill-deps.mjs；active 软链 `~/.workbuddy/skills/iskill-dep-sync`
+- 新仓库 `iskill-utils`：SKILL.md / README.md / docs/TECH-SPEC.md / package.json /
+  scripts/skill-deps.mjs；active 软链 `~/.workbuddy/skills/iskill-utils`
 - 真源打戳 v1.0.0：iskill-qrcode（qrcode.mjs）、iskill-crop-qrcode（qrcrop.mjs）、
   iskill-promo-page（引擎三件套）+ 各自 package.json（iskillShared）
 - 消费方：26 个含 `promo-page/assets/` 引擎副本的仓库（含 iskill-promo-page 自身实例）+

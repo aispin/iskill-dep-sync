@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * iskill-dep-sync · skill-deps.mjs —— iskill 体系共享代码 check/sync/env 工具
+ * iskill-utils · skill-deps.mjs —— iskill 体系共享代码 check/sync/env 工具
  * ---------------------------------------------------------------------------
  * 零三方依赖（Node ≥ 24 标准库）。设计文档：本仓库 docs/TECH-SPEC.md。
  *
@@ -44,10 +44,18 @@ const rel = p => { try { return path.relative(process.cwd(), p) || '.'; } catch 
 function die(msg, code = 2) { console.error(`✗ ${msg}`); process.exit(code); }
 
 function parseArgs(argv) {
-  const flags = new Set(); const dirs = [];
-  for (const a of argv) {
-    if (a.startsWith('--')) flags.add(a);
-    else dirs.push(a);
+  const flags = new Map(); const dirs = [];
+  for (let i = 0; i < argv.length; i++) {
+    const a = argv[i];
+    if (a.startsWith('--')) {
+      const next = argv[i + 1];
+      // 带 = 的取值（--dir=/x）；裸 flag 后跟非 -- 开头的值时吞为该 flag 的值
+      if (next !== undefined && !next.startsWith('--') && /^(--dir|--description|--out)$/.test(a)) {
+        flags.set(a.slice(2), next); i++;
+      } else {
+        flags.set(a.replace(/^--/, ''), a.includes('=') ? a.split('=').slice(1).join('=') : true);
+      }
+    } else dirs.push(a);
   }
   return { flags, dirs };
 }
@@ -159,7 +167,7 @@ async function checkOne(dep, skillDir, opts, idx) {
 }
 
 async function cmdCheck(dirs, flags) {
-  const opts = { offline: flags.has('--offline') };
+  const opts = { offline: flags.has('offline') };
   const targets = expandTargets(dirs);
   if (!targets.length) die('未找到含 iskillDeps 的 package.json（在目标目录及其上层找过了）');
   let drift = 0; let total = 0;
@@ -191,9 +199,9 @@ function expandTargets(dirs) {
 // ────────────────────────────────────────────────────────────── sync
 
 async function cmdSync(dirs, flags) {
-  const opts = { remote: flags.has('--remote'), offline: flags.has('--offline'), bust: true };
+  const opts = { remote: flags.has('remote'), offline: flags.has('offline'), bust: true };
   if (opts.remote && opts.offline) die('--remote 与 --offline 互斥');
-  const dry = flags.has('--dry-run');
+  const dry = flags.has('dry-run');
   const targets = expandTargets(dirs);
   if (!targets.length) die('未找到含 iskillDeps 的 package.json');
   let changed = 0; let total = 0;
@@ -345,6 +353,84 @@ function cmdInit(dirs) {
   console.log('下一步：node skill-deps.mjs sync ' + dir + ' && node skill-deps.mjs check ' + dir);
 }
 
+// ────────────────────────────────────────────────────────────── create：按规范脚手架新技能
+
+function cmdCreate(args, flags) {
+  const nameArg = args[0];
+  if (!nameArg) return console.log('用法：node skill-deps.mjs create <name> [--dir <父目录>] [--description <一句话>]\n  name 可不带 iskill- 前缀（自动补全）');
+  const parent = flags.get('dir') || process.cwd();
+  const name = nameArg.startsWith('iskill-') ? nameArg : `iskill-${nameArg}`;
+  if (!/^iskill-[a-z0-9]+(-[a-z0-9]+)*$/.test(name)) {
+    return console.log(`✗ 非法名字「${name}」：须为小写 kebab-case（iskill- 前缀 + [a-z0-9-]）`);
+  }
+  const dir = path.join(parent, name);
+  if (fs.existsSync(dir)) return console.log(`✗ 已存在：${dir}`);
+  const desc = flags.get('description') || '<TODO：何时触发（触发词）+ 核心能力——这是 agent 路由的唯一依据>';
+  fs.mkdirSync(path.join(dir, 'scripts'), { recursive: true });
+  fs.mkdirSync(path.join(dir, 'docs'), { recursive: true });
+
+  fs.writeFileSync(path.join(dir, 'SKILL.md'), `# ${name}
+
+---
+description: ${desc}
+---
+
+## 概述
+
+<TODO：一段话说清本技能做什么、边界在哪。>
+
+## 何时用
+
+- <TODO：触发场景，与 description 呼应>
+
+## 用法
+
+\`\`\`bash
+node scripts/<TODO>.mjs --help
+\`\`\`
+
+## 安装（AI skill）
+
+对 agent 说：**请帮我安装 Skill：aispin/${name}**
+
+## 依赖与自举
+
+| 依赖 | 何时需要 | 探测 / 安装 |
+| --- | --- | --- |
+| node ≥ 24 | 全部环节 | \`command -v node\` 探测；无则装 Node |
+| <TODO：其他工具/技能> | <TODO：哪些环节> | <TODO：怎么探测、缺失怎么装或降级> |
+
+## 验收
+
+<TODO：改动本技能后必做的验证步骤>
+`);
+
+  fs.writeFileSync(path.join(dir, 'README.md'), `# ${name}
+
+${desc}
+
+完整用法见 [SKILL.md](SKILL.md)。
+`);
+
+  fs.writeFileSync(path.join(dir, 'package.json'), JSON.stringify({
+    name,
+    private: true,
+    type: 'module',
+    description: desc.slice(0, 200),
+    engines: { node: '>=24' },
+    iskillDeps: [],
+  }, null, 2) + '\n');
+
+  fs.writeFileSync(path.join(dir, '.gitignore'), 'node_modules/\n.DS_Store\n');
+
+  console.log(`✓ 已创建 ${dir}`);
+  console.log('下一步（agent 请照做）：');
+  console.log(`  1. 填 SKILL.md：description 触发词、概述、用法、依赖与自举、验收`);
+  console.log(`  2. 写 scripts/ 实现——零三方依赖，仅用 Node ≥ 24 标准库`);
+  console.log(`  3. 规范全文：https://github.com/aispin/iskill-utils（docs/SPEC.md）`);
+  console.log(`  4. 发布：git init && git config user.name/email（noreply 邮箱）→ gh repo create aispin/${name} --public --source . --push`);
+}
+
 // ────────────────────────────────────────────────────────────── 入口
 
 function stampInfo(text) {
@@ -360,6 +446,7 @@ switch (cmd) {
   case 'sync': await cmdSync(dirs, flags); break;
   case 'env': cmdEnv(dirs); break;
   case 'init': cmdInit(dirs); break;
+  case 'create': cmdCreate(dirs, flags); break;
   default:
     console.log(fs.readFileSync(new URL(import.meta.url)).toString().match(/\/\*\*[\s\S]*?\*\//)[0]
       .replace(/^\/\*\*|\*\/$|^\s*\* ?/gm, '').trim());
