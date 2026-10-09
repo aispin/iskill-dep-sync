@@ -2,5 +2,8 @@
   "name": "iskill-dep-sync",
   "private": true,
   "type": "module",
-  "description": "iskill 体系共享代码唯一真源的 check/sync/env 工具（零依赖单文件 CLI）"
+  "description": "iskill 体系共享代码唯一真源的 check/sync/env 工具（零依赖单文件 CLI）",
+  "engines": {
+    "node": ">=24"
+  }
 }

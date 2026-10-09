@@ -1,6 +1,9 @@
 # iskill-dep-sync
 
-iskill 体系「共享代码唯一真源」的 check / sync / env 工具：零依赖（Node ≥ 18 标准库）单文件 CLI。
+> **内部技能**：本工具是 iskill 技能体系的内部基础设施，服务于「共享代码唯一真源」机制；
+> **普通用户不需要关注和安装**。只有当某个 iskill 技能的文档让你「同时安装 iskill-dep-sync」时才需要装。
+
+iskill 体系「共享代码唯一真源」的 check / sync / env 工具：零依赖（Node ≥ 24 标准库）单文件 CLI。
 每个 skill 用 `package.json` 的 `iskillDeps` 声明自己 vendor 了谁的什么文件、锁定什么版本；
 真源文件头部用 `@iskill-source` / `@iskill-version` 打戳；本工具比对三方（副本头 / 锁定 / 真源头）
 版本与 md5，报告漂移并一键同步。设计与背景详见 `docs/TECH-SPEC.md`。
@@ -55,9 +58,22 @@ node $T init /path/to/some-skill
 git clone https://github.com/aispin/<技能名>.git "$HOME/.workbuddy/skills/<技能名>"
 ```
 
-克隆进 `~/.workbuddy/skills/` 即完成激活（WorkBuddy 按目录加载技能）。本机开发者惯例是
-`~/.workbuddy/skills/<名>` 软链到 `~/WorkBuddy/ISkills/<名>` 的 git 仓库——两种形态本工具都认
-（探测顺序：`ISKILL_SOURCE_HOME` env → `~/.workbuddy/skills/` → 兄弟目录 → GitHub raw 兜底）。
+克隆进技能目录即完成激活（agent 宿主按目录加载技能；若你的宿主技能根目录不是
+`~/.workbuddy/skills/`，设 `ISKILL_SOURCE_HOME` 指向它即可，工具探测顺序：
+`ISKILL_SOURCE_HOME` → `~/.workbuddy/skills/` → 兄弟目录 → GitHub raw 兜底）。
+本机开发者惯例是 `~/.workbuddy/skills/<名>` 软链到 `~/WorkBuddy/ISkills/<名>` 的 git 仓库——
+两种形态本工具都认。
+
+## 安装（AI skill）
+
+对 agent 说：**请帮我安装 Skill：aispin/iskill-dep-sync**
+
+开发者手动安装（等效）：
+
+```bash
+git clone https://github.com/aispin/iskill-dep-sync.git "$HOME/.workbuddy/skills/iskill-dep-sync"
+node ~/.workbuddy/skills/iskill-dep-sync/scripts/skill-deps.mjs --help
+```
 
 ## 真源升版本 SOP
 

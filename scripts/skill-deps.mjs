@@ -2,7 +2,7 @@
 /**
  * iskill-dep-sync · skill-deps.mjs —— iskill 体系共享代码 check/sync/env 工具
  * ---------------------------------------------------------------------------
- * 零三方依赖（Node ≥ 18 标准库）。设计文档：本仓库 docs/TECH-SPEC.md。
+ * 零三方依赖（Node ≥ 24 标准库）。设计文档：本仓库 docs/TECH-SPEC.md。
  *
  * 机制一句话：每个 skill 的 package.json 用 iskillDeps 声明「我 vendor 了谁的
  * 什么文件、锁定什么版本」；真源文件头部用 @iskill-source/@iskill-version 打戳；
